@@ -17,10 +17,8 @@ import android.widget.Toast;
 
 import com.ziahaqi.printlibs.PrinterActivity;
 import com.ziahaqi.printlibs.exception.PrinterException;
-import com.ziahaqi.printlibs.model.PrinterType;
-
-import java.util.ArrayList;
-import java.util.Set;
+import com.ziahaqi.printlibs.factory.PrinterConnector;
+import com.ziahaqi.printlibs.model.ConnectionType;
 
 
 public class MainActivity extends PrinterActivity {
@@ -35,7 +33,6 @@ public class MainActivity extends PrinterActivity {
 
     private ProgressDialog mProgressDlg;
     private ProgressDialog mConnectingDlg;
-    private BluetoothAdapter mBluetoothAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,7 +54,7 @@ public class MainActivity extends PrinterActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    disconnect();
+                    disconnect(ConnectionType.BLUETOOTH);
                 } catch (PrinterException e) {
                     Toast.makeText(MainActivity.this, e.getError(), Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
@@ -69,7 +66,7 @@ public class MainActivity extends PrinterActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    cancelConnection();
+                    cancelConnection(ConnectionType.BLUETOOTH);
                 } catch (PrinterException e) {
                     Toast.makeText(MainActivity.this, e.getError(), Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
@@ -90,23 +87,31 @@ public class MainActivity extends PrinterActivity {
             }
         });
 
-        mBluetoothDeviceList = new ArrayList<>();
-        mBluetoothAdapter	= BluetoothAdapter.getDefaultAdapter();
+        mPrintTextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for(PrinterConnector connector : mConnectorList){
+                    String sampleText = " string text ";
+                    try {
+                        connector.sendData(sampleText.getBytes());
+                    } catch (PrinterException e) {
+                        Log.e("print", e.getMessage());
+                        Toast.makeText(getApplicationContext(), "printer:" + connector.getName(), Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
         if (mBluetoothAdapter == null) {
 //            showUnsupported();
         } else {
             if (!mBluetoothAdapter.isEnabled()) {
                 showDisabled();
-            } else {
+            }else {
                 showEnabled();
+                updateBluetoothDeviceList();
 
-                Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-
-                if (pairedDevices != null) {
-                    mBluetoothDeviceList.addAll(pairedDevices);
-                    updateBluetoothDeviceList();
-                }
             }
 
             mProgressDlg 	= new ProgressDialog(this);
@@ -126,7 +131,6 @@ public class MainActivity extends PrinterActivity {
 
             mConnectingDlg.setMessage("Connecting...");
             mConnectingDlg.setCancelable(false);
-
 
             //enable bluetooth
             mEnableBtn.setOnClickListener(new View.OnClickListener() {
@@ -186,29 +190,28 @@ public class MainActivity extends PrinterActivity {
 
 
     @Override
-    public void onConnectionCancelled(String name, PrinterType printerType) {
+    public void onConnectionCancelled(String name, ConnectionType connectionType) {
         Log.i("bluetooth", "onConnectionCancelled()");
     }
 
     @Override
-    public void onConnectionSuccess(String name, PrinterType printerType) {
+    public void onConnectionSuccess(String name, ConnectionType connectionType) {
         Log.i("bluetooth", "onConnectionSuccess()");
     }
 
     @Override
-    public void onConnectionFailed(String name, PrinterType printerType, String error) {
+    public void onConnectionFailed(String name, ConnectionType connectionType, String error) {
         Log.i("bluetooth", "onConnectionFailed()");
     }
 
     @Override
-    public void onDisconnected(String name, PrinterType printerType) {
+    public void onDisconnected(String name, ConnectionType connectionType) {
         Log.i("bluetooth", "onDisconnected()");
     }
 
     @Override
     public void onStartConnecting(String printerId) {
         Log.i("bluetooth", "onStartConnecting()");
-
     }
 
     @Override
@@ -233,8 +236,6 @@ public class MainActivity extends PrinterActivity {
         mConnectBtn.setVisibility(View.GONE);
         mDeviceSp.setVisibility(View.GONE);
     }
-
-
 
     private void showEnabled(){
         Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show();

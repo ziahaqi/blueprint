@@ -5,9 +5,9 @@ import android.content.Context;
 
 import com.ziahaqi.printlibs.connector.BluetoothConnector;
 import com.ziahaqi.printlibs.factory.PrinterConnector;
-import com.ziahaqi.printlibs.model.PrinterLabel;
-import com.ziahaqi.printlibs.model.PrinterListener;
 import com.ziahaqi.printlibs.model.PrinterType;
+import com.ziahaqi.printlibs.model.PrinterListener;
+import com.ziahaqi.printlibs.model.ConnectionType;
 
 /**
  * Created by zinux on 23/07/15.
@@ -16,13 +16,15 @@ public class BluetoothBuilder extends DriverBuilder {
     private BluetoothDevice device;
     private String macAddress;
 
-    public BluetoothBuilder(Context context, BluetoothDevice device, PrinterLabel printerLabel, PrinterListener printerListener) {
+    public BluetoothBuilder(Context context, BluetoothDevice device, PrinterType printerType, PrinterListener printerListener) {
         this.context = context;
         this.device = device;
-        this.printerType = PrinterType.BLUETOOTH;
-        this.printerLabel = printerLabel;
+        this.connectionType = ConnectionType.BLUETOOTH;
+
+        this.printerType = printerType;
         this.printerListener = printerListener;
         this.printerId = device.getAddress();
+
     }
 
     public BluetoothBuilder context(Context context){
@@ -50,13 +52,13 @@ public class BluetoothBuilder extends DriverBuilder {
         return this;
     }
 
-    public BluetoothBuilder label(PrinterLabel printerLabel){
-        this.printerLabel = printerLabel;
+    public BluetoothBuilder label(PrinterType printerType){
+        this.printerType = printerType;
         return this;
     }
 
-    public BluetoothBuilder type(PrinterType printerType){
-        this.printerType = printerType;
+    public BluetoothBuilder type(ConnectionType connectionType){
+        this.connectionType = connectionType;
         return this;
     }
 

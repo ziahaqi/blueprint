@@ -16,13 +16,14 @@ import com.ziahaqi.printlibs.builder.BluetoothBuilder;
 import com.ziahaqi.printlibs.exception.PrinterException;
 import com.ziahaqi.printlibs.factory.PrinterConnector;
 import com.ziahaqi.printlibs.factory.PrinterFactory;
-import com.ziahaqi.printlibs.model.ConnectionType;
-import com.ziahaqi.printlibs.model.PrinterLabel;
+import com.ziahaqi.printlibs.model.PrinterType;
 import com.ziahaqi.printlibs.model.PrinterListener;
+import com.ziahaqi.printlibs.model.ConnectionType;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by zinux on 03/08/15.
@@ -30,23 +31,17 @@ import java.util.List;
 public abstract class PrinterActivity extends FragmentActivity implements PrinterListener{
     private final String TAG = "PrinterActivity";
 
-    protected List<PrinterConnector> connectorList;
+    /*
+     * bluetooth property
+     */
+    protected List<PrinterConnector> mConnectorList;
     protected ArrayList<BluetoothDevice> mBluetoothDeviceList;
+    protected BluetoothAdapter mBluetoothAdapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(connectorList == null){
-            connectorList = new ArrayList<>();
-        }
-        Log.i(TAG, "oncreate()>regreciver");
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        registerReceiver(mReceiver, filter);
+        initBluetoothStuff();
     }
 
     @Override
@@ -57,11 +52,8 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
 
 
     protected PrinterConnector findPrinterConnectorById(String printerId){
-        if(connectorList != null){
-            for(PrinterConnector connector : connectorList){
-                Log.i(TAG, "connector:" + connector);
-                Log.i(TAG, "connector>getPrinterId:" + connector.getPrinterId());
-
+        if(mConnectorList != null){
+            for(PrinterConnector connector : mConnectorList){
                 if(connector.getPrinterId().equals(printerId)){
                     return connector;
                 }
@@ -70,18 +62,58 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
         return null;
     }
 
-    protected void addConnector(PrinterConnector connector){
-        if(connectorList != null){
-            connectorList.add(connector);
+    protected PrinterConnector findPrinterConnectorByConnectionType(ConnectionType connectionType){
+        if(mConnectorList != null){
+            for(PrinterConnector connector : mConnectorList){
+                if(connector.getConnectionType().equals(connectionType)){
+                    return connector;
+                }
+            }
         }
+        return null;
     }
 
+    protected void addConnector(PrinterConnector connector){
+        if(mConnectorList != null){
+            mConnectorList.add(connector);
+        }
+    }
 
     /*
      * Bluetooth stuff
      */
-    private BluetoothDevice createBondBluetoothDevice(BluetoothDevice device){
 
+    private void initBluetoothStuff(){
+        if(mConnectorList == null){
+            mConnectorList = new ArrayList<>();
+        }
+        if(mBluetoothAdapter == null){
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
+        if(mBluetoothDeviceList == null){
+            mBluetoothDeviceList = new ArrayList<>();
+        }
+        initBondedBluetoothDevices();
+        Log.i(TAG, "oncreate()>regreciver");
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(mReceiver, filter);
+    }
+
+    protected void  initBondedBluetoothDevices(){
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        if (pairedDevices != null) {
+            mBluetoothDeviceList.clear();
+            mBluetoothDeviceList.addAll(pairedDevices);
+        }
+        Log.i("devices", "size:" + mBluetoothDeviceList.size());
+    }
+
+    private BluetoothDevice createBondBluetoothDevice(BluetoothDevice device){
         if (device.getBondState() == BluetoothDevice.BOND_NONE) {
             try {
                 Class<?> cl 	= Class.forName("android.bluetooth.BluetoothDevice");
@@ -97,13 +129,6 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
         return device;
     }
 
-
-
-
-
-
-
-
     /*
      * Bluetooth
      */
@@ -114,7 +139,7 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
         PrinterConnector connector = findPrinterConnectorById(device.getAddress());
         if(connector == null){
             BluetoothDevice bondDevice = createBondBluetoothDevice(device);
-            connector = PrinterFactory.init(new BluetoothBuilder(this, bondDevice, PrinterLabel.THERMAL, this)
+            connector = PrinterFactory.init(new BluetoothBuilder(this, bondDevice, PrinterType.THERMAL, this)
                     .name("blue bambu")
                     .unit("kasir")).build();
             addConnector(connector);
@@ -124,24 +149,31 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
     }
 
     protected void connect(ConnectionType connectionType) throws PrinterException {
-        for(PrinterConnector connector : connectorList){
+        if(connectionType == null){
+            return;
+        }
+        PrinterConnector connector = findPrinterConnectorByConnectionType(connectionType);
+        if(connector != null){
             connector.connect();
-            Log.i(TAG, "lib>name:" + connector.getName());
-            Log.i(TAG, "lib>id:" + connector.getPrinterId());
-            Log.i(TAG, "lib>unit:" + connector.getUnit());
-            Log.i(TAG, "lib>label:" + connector.getLabel());
-            Log.i(TAG, "lib>name:" + connector.getPrinterType());
         }
     }
 
-    protected void disconnect() throws PrinterException {
-        for(PrinterConnector connector : connectorList){
+    protected void disconnect(ConnectionType connectionType) throws PrinterException {
+        if(connectionType == null){
+            return;
+        }
+        PrinterConnector connector = findPrinterConnectorByConnectionType(connectionType);
+        if(connector != null){
             connector.disconnect();
         }
     }
 
-    protected void cancelConnection() throws PrinterException {
-        for(PrinterConnector connector : connectorList){
+    protected void cancelConnection(ConnectionType connectionType) throws PrinterException {
+        if(connectionType == null){
+            return;
+        }
+        PrinterConnector connector = findPrinterConnectorByConnectionType(connectionType);
+        if(connector != null){
             connector.cancelConnection();
         }
     }
@@ -159,9 +191,11 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
                     onBluetoothStateOff();
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                Log.d(TAG, "blutut:dicovery start");
                 mBluetoothDeviceList = new ArrayList<>();
                 onBluetoothDiscoveryStarted();
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                Log.d(TAG, "blutut:dicovery finished");
                 onBluetoothDiscoveryFinished();
             } else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -195,7 +229,6 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
     }
     //
     protected  void onBluetoothStateOn(){
-
     }
     protected  void onBluetoothStateOff(){
 
@@ -204,6 +237,7 @@ public abstract class PrinterActivity extends FragmentActivity implements Printe
 
     }
     protected  void onBluetoothDiscoveryFinished(){
-
+        initBondedBluetoothDevices();
     }
+
 }

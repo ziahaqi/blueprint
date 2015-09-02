@@ -1,8 +1,8 @@
 package com.ziahaqi.printlibs.model;
 
 /**
- * Created by zinux on 10/07/15.
+ * Created by zinux on 03/08/15.
  */
 public enum PrinterType {
-    USB, BLUETOOTH, WIFI
+    DOTMETRIX, THERMAL
 }

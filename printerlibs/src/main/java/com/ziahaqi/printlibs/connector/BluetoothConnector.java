@@ -1,6 +1,5 @@
 package com.ziahaqi.printlibs.connector;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
@@ -10,10 +9,9 @@ import android.util.Log;
 import com.ziahaqi.printlibs.builder.BluetoothBuilder;
 import com.ziahaqi.printlibs.exception.PrinterException;
 import com.ziahaqi.printlibs.factory.PrinterConnector;
+import com.ziahaqi.printlibs.model.ConnectionType;
 import com.ziahaqi.printlibs.model.Printer;
-import com.ziahaqi.printlibs.model.PrinterLabel;
 import com.ziahaqi.printlibs.model.PrinterListener;
-import com.ziahaqi.printlibs.model.PrinterType;
 import com.ziahaqi.printlibs.utils.bluetooth.StringUtil;
 
 import java.io.IOException;
@@ -41,15 +39,16 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
         this.context = builder.getContext();
         this.listener = builder.getPrinterListener();
         this.device = builder.getDevice();
-        this.label = builder.getPrinterLabel();
+        this.label = builder.getPrinterType();
         this.macAddress = builder.getMacAddress();
         this.name = builder.getName();
         this.printerId = builder.getPrinterId();
-        this.printerType = builder.getPrinterType();
+        this.connectionType = builder.getConnectionType();
         this.unit = builder.getPrinterUnit();
         Log.i(TAG, "libname>BluetoothConnector:" + builder.getName());
 
     }
+
 
 
     @Override
@@ -73,7 +72,7 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
         try {
             mSocket.close();
             mSocket = null;
-            listener.onDisconnected(name, printerType);
+            listener.onDisconnected(name, connectionType);
         } catch (IOException e) {
             throw new PrinterException(e.getMessage());
         }
@@ -83,21 +82,20 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
         if (mIsConnecting && connectionTask != null) {
             connectionTask.cancel(true);
 
-            listener.onConnectionCancelled(name, printerType);
+            listener.onConnectionCancelled(name, connectionType);
         } else {
             throw new PrinterException("No connection is in progress");
         }
     }
 
+    @Override
     public void sendData(byte[] msg) throws PrinterException {
         if (mSocket == null) {
             throw new PrinterException("Socket is not connected, try to call connect() first");
         }
-
         try {
             mOutputStream.write(msg);
             mOutputStream.flush();
-
             Log.i(TAG, StringUtil.byteToString(msg));
         } catch(Exception e) {
             throw new PrinterException(e.getMessage());
@@ -115,6 +113,11 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
         return (mSocket != null);
     }
 
+    @Override
+    public ConnectionType getPrinterType() {
+        return this.connectionType;
+    }
+
 
     private class ConnectionTask extends AsyncTask<URL, Integer, Long>{
         private BluetoothDevice device;
@@ -128,7 +131,7 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
         protected void onCancelled() {
             super.onCancelled();
             mIsConnecting = false;
-            listener.onConnectionCancelled(name, printerType);
+            listener.onConnectionCancelled(name, connectionType);
         }
 
         @Override
@@ -182,7 +185,7 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
             mIsConnecting = false;
 
             if (mSocket != null && result == 1) {
-                listener.onConnectionSuccess(name, printerType);
+                listener.onConnectionSuccess(name, connectionType);
             } else {
                 if(mSocket != null){
                     try {
@@ -193,9 +196,13 @@ public class BluetoothConnector extends Printer implements PrinterConnector {
                         e.printStackTrace();
                     }
                 }
-                listener.onConnectionFailed(name, printerType, "Connection failed " + error);
+                listener.onConnectionFailed(name, connectionType, "Connection failed " + error);
             }
         }
     }
 
+    @Override
+    public String getUnit() {
+        return super.getUnit();
+    }
 }

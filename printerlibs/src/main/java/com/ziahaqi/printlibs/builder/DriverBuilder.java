@@ -3,9 +3,9 @@ package com.ziahaqi.printlibs.builder;
 import android.content.Context;
 
 import com.ziahaqi.printlibs.factory.PrinterConnector;
-import com.ziahaqi.printlibs.model.PrinterLabel;
-import com.ziahaqi.printlibs.model.PrinterListener;
 import com.ziahaqi.printlibs.model.PrinterType;
+import com.ziahaqi.printlibs.model.PrinterListener;
+import com.ziahaqi.printlibs.model.ConnectionType;
 
 /**
  * Created by zinux on 23/07/15.
@@ -13,8 +13,8 @@ import com.ziahaqi.printlibs.model.PrinterType;
 public abstract class DriverBuilder {
     protected String printerId;
     protected Context context;
-    protected PrinterLabel printerLabel;
     protected PrinterType printerType;
+    protected ConnectionType connectionType;
     protected String printerUnit;
     protected PrinterListener printerListener;
     protected String name;
@@ -27,12 +27,12 @@ public abstract class DriverBuilder {
         return context;
     }
 
-    public PrinterLabel getPrinterLabel() {
-        return printerLabel;
-    }
-
     public PrinterType getPrinterType() {
         return printerType;
+    }
+
+    public ConnectionType getConnectionType() {
+        return connectionType;
     }
 
     public String getPrinterUnit() {

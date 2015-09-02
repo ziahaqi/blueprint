@@ -1,8 +1,8 @@
 package com.ziahaqi.printlibs.factory;
 
 import com.ziahaqi.printlibs.exception.PrinterException;
-import com.ziahaqi.printlibs.model.PrinterLabel;
 import com.ziahaqi.printlibs.model.PrinterType;
+import com.ziahaqi.printlibs.model.ConnectionType;
 
 /**
  * Created by zinux on 10/07/15.
@@ -21,12 +21,15 @@ public interface PrinterConnector {
 
     public String getPrinterId();
 
-    public PrinterType getPrinterType();
+    public ConnectionType getPrinterType();
 
-    public PrinterLabel getLabel();
+    public PrinterType getLabel();
 
     public String getName();
 
     public String getUnit();
 
+    public abstract void sendData(byte[] bytes)throws PrinterException;
+
+    ConnectionType getConnectionType();
 }

@@ -5,7 +5,7 @@ package com.ziahaqi.printlibs.model;
  */
 public abstract class Printer  {
 
-    protected PrinterType printerType;
+    protected ConnectionType connectionType;
     protected int port;
     protected String host;
     protected String macAddress;
@@ -13,15 +13,15 @@ public abstract class Printer  {
     protected  int height;
     protected String name;
     protected String printerId;
-    protected PrinterLabel label;
+    protected PrinterType label;
     protected String unit;
 
-    public PrinterType getPrinterType() {
-        return printerType;
+    public ConnectionType getConnectionType() {
+        return connectionType;
     }
 
-    public void setPrinterType(PrinterType printerType) {
-        this.printerType = printerType;
+    public void setConnectionType(ConnectionType connectionType) {
+        this.connectionType = connectionType;
     }
 
     public int getPort() {
@@ -80,11 +80,11 @@ public abstract class Printer  {
         this.printerId = printerId;
     }
 
-    public PrinterLabel getLabel() {
+    public PrinterType getLabel() {
         return label;
     }
 
-    public void setLabel(PrinterLabel label) {
+    public void setLabel(PrinterType label) {
         this.label = label;
     }
 

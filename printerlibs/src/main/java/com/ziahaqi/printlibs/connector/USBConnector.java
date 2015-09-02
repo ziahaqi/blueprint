@@ -48,4 +48,9 @@ public class USBConnector extends Printer implements PrinterConnector {
 
         return false;
     }
+
+    @Override
+    public void sendData(byte[] bytes) throws PrinterException {
+
+    }
 }
